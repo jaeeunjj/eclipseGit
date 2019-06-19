@@ -14,7 +14,7 @@ import kr.or.ddit.board.service.IBoardServie;
 import kr.or.ddit.common.InsertHint;
 import kr.or.ddit.enumpkg.ServiceResult;
 import kr.or.ddit.vo.BoardVO;
-
+//git test
 @Controller
 public class BoardCreateController {
 	
