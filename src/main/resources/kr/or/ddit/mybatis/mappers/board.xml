@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.dao.IBoardDAO">
+	<sql id="searchFrag">
+		<where>
+			<if
+				test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchWord)">
+				<choose>
+					<when test='"bo_title".equals(searchType)'>
+						${searchType} LIKE '%'||#{searchWord}||'%'
+					</when>
+					<when test='"bo_writer".equals(searchType)'>
+						${searchType} LIKE '%'||#{searchWord}||'%'
+					</when>
+					<when test='"bo_content".equals(searchType)'>
+						${searchType} LIKE '%'||#{searchWord}||'%'
+					</when>
+					<when test='"all".equals(searchType)'>
+						BO_TITLE LIKE '%'||#{searchWord}||'%' OR
+						BO_WRITER
+						LIKE '%'||#{searchWord}||'%' OR
+						BO_CONTENT LIKE
+						'%'||#{searchWord}||'%'
+					</when>
+				</choose>
+			</if>
+		</where>
+	</sql>
+
+
+	<select id="selectBoardCount" parameterType="PagingVO"
+		resultType="long">
+		SELECT COUNT(BO_NO)
+		FROM BOARD
+		<include refid="searchFrag" />
+	</select>
+
+	<select id="selectBoardList" resultType="BoardVO"
+		parameterType="PagingVO">
+		WITH ORDEREDBOARD AS (
+		SELECT
+		BO_NO, LPAD('  ┗RE:', (LEVEL-1)*6, '&amp;nbsp;')||BO_TITLE AS BO_TITLE, 
+		BO_WRITER,
+		BO_PASS,
+		BO_DATE, BO_CONTENT,
+		CODE_ID, BO_HIT, BO_REPORT,
+		BO_LIKE, BO_HATE,
+		BO_IP,
+		BO_MAIL, BO_PARENT
+
+		FROM BOARD
+		<include refid="searchFrag" />
+		
+		START WITH BO_PARENT IS NULL
+		CONNECT BY PRIOR BO_NO = BO_PARENT
+		ORDER SIBLINGS BY BO_NO DESC
+		
+		)
+
+		SELECT *
+		FROM(
+		SELECT ROWNUM RNUM,ORDEREDBOARD.*
+		FROM ORDEREDBOARD
+		)
+	
+	  <![CDATA[
+		WHERE RNUM>=#{startRow} AND RNUM<=#{endRow}
+		AND (BO_REPORT <= 5)
+		]]>
+
+	</select>
+
+	<resultMap type="BoardVO" id="boardMap" autoMapping="true">
+		<id property="bo_no" column="BO_NO" />
+		
+		<collection property="pdsList" ofType="PdsVO"
+			autoMapping="true">
+			<id property="pds_no" column="PDS_NO" />
+		</collection>
+	</resultMap>
+	<select id="selectBoard" resultMap="boardMap"
+		parameterType="Integer">
+
+		SELECT
+		B.BO_NO, B.BO_TITLE, B.BO_WRITER,
+		B.BO_PASS,
+		B.BO_DATE, B.BO_CONTENT,
+		B.CODE_ID, B.BO_HIT, B.BO_REPORT,
+		B.BO_LIKE,
+		B.BO_HATE, B.BO_IP,
+		B.BO_MAIL, B.BO_PARENT
+		, C.CODE_NAME
+		, P.PDS_NO, P.PDS_FILENAME, P.PDS_SAVEPATH
+		, P.PDS_MIME, P.PDS_FANCYSIZE, P.PDS_SIZE
+		
+		FROM BOARD B INNER JOIN SIMPLECODE C ON (B.CODE_ID = C.CODE_ID)
+		LEFT OUTER JOIN PDS P ON (B.BO_NO = P.BO_NO)
+		WHERE B.BO_NO = #{board.bo_no}
+
+	</select>
+
+	<update id="incrementHit" parameterType="Integer">
+		UPDATE BOARD
+		SET BO_HIT =
+		BO_HIT+1
+		WHERE BO_NO= #{bo_no}
+
+	</update>
+	
+	<update id="incrementReport" parameterType="Integer">
+		UPDATE BOARD
+		SET BO_REPORT =
+		BO_REPORT+1
+		WHERE BO_NO= #{bo_no}
+	
+	</update>
+	
+	<update id="incrementLikeOrHate">
+		UPDATE BOARD
+		SET 
+			BO_HATE = #{bo_hate},
+			BO_LIKE =#{bo_like}
+		WHERE BO_NO= #{bo_no}
+	</update>
+
+	<insert id="insertBoard" parameterType="BoardVO">
+		<selectKey resultType="int" keyProperty="bo_no" order="BEFORE">
+			SELECT BOARD_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+	
+	INSERT INTO board (
+	
+		BO_NO, 	BO_TITLE, BO_WRITER,
+		BO_PASS, BO_DATE, BO_CONTENT,
+		CODE_ID,  BO_IP,
+		BO_MAIL
+		<if test="bo_parent !=null and bo_parent gt 0">
+		, BO_PARENT
+		</if>
+		
+	) VALUES (
+		#{bo_no}, 		#{bo_title}, 	#{bo_writer},
+		#{bo_pass},	 	SYSDATE, 		#{bo_content, jdbcType=CLOB},
+		#{code_id},		#{bo_ip},
+		#{bo_mail, jdbcType=VARCHAR}
+		<if test="bo_parent !=null and bo_parent gt 0">
+		, #{bo_parent}
+		</if>	
+	)
+	
+	</insert>
+	
+	<delete id="deleteBoard" parameterType="int">
+		DELETE FROM BOARD
+		WHERE
+    	BO_NO = #{bo_no} 
+	</delete>
+
+	<update id="updateBoard" parameterType="BoardVO">
+	UPDATE BOARD
+    SET
+	    BO_TITLE =  #{bo_title},
+	    BO_WRITER = #{ bo_writer},
+	    BO_CONTENT = #{bo_content},
+	    BO_IP = #{bo_ip},
+	    BO_MAIL = #{bo_mail}
+  	
+  	WHERE BO_NO = #{bo_no}
+	
+	</update>
+
+</mapper>

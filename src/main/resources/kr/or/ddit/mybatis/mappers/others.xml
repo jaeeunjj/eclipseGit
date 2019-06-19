@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.prod.dao.IOthersDAO">
+	<select id="selectLprodList" resultType="hashmap">
+		SELECT LPROD_GU "lprod_gu", LPROD_NM "lprod_nm"
+		FROM LPROD
+	</select>
+<!-- 	OGNL 표기방식으로 조건절 사용 -->
+	<select id="selectBuyerList" resultType="BuyerVO" parameterType="string">
+		SELECT BUYER_ID, BUYER_NAME, BUYER_LGU
+		FROM BUYER
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(buyer_lgu)">
+			WHERE BUYER_LGU = #{buyer_lgu}
+		</if>
+	</select>
+	
+</mapper>

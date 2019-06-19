@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd">
+
+<!-- 	스키마종류 : beans, c,p,context,mvc -->
+
+	<context:component-scan base-package="kr.or.ddit" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:include-filter type="annotation" expression="kr.or.ddit.common.annotation.Preparer"/>
+	</context:component-scan>
+	<mvc:annotation-driven>
+		<mvc:argument-resolvers>
+			<bean class="kr.or.ddit.test.PdsVOHandlerMethodArgumentResolver"></bean>
+		</mvc:argument-resolvers>
+	
+	</mvc:annotation-driven>
+	
+	
+<!-- 	동일 전략을 여러개 등록하는 경우, order 에  의해 우선순위를 설정해야함. -->
+<!-- 	주의! IRVR는 어떤 경우에도 가장 마지막에 동작해야함.. -->
+<!-- 	order 생략하면 , Integer.MAX_VALUE가 할당됨. -->
+	
+	<bean id="IRVR" class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+		p:prefix="/WEB-INF/views/"
+		p:suffix=".jsp"
+		
+	/>
+	
+	<bean class="org.springframework.web.servlet.view.tiles3.TilesConfigurer"
+		p:definitions="classpath:kr/or/ddit/tiles/tiles-definitions.xml"
+		p:preparerFactoryClass="org.springframework.web.servlet.view.tiles3.SpringBeanPreparerFactory"
+	/>
+	<bean class="org.springframework.web.servlet.view.tiles3.TilesViewResolver"
+		p:order="1"
+	/>
+	
+<!-- 	json 데이터로 내보내줌.. -->
+	<bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView"/>
+	<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" 
+		p:order="2"
+	/>
+	
+	
+	
+	<mvc:default-servlet-handler/>
+	<mvc:resources location="/resource" mapping="/res/**" cache-period="0"/>
+	
+	<bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
+	
+
+	
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver"
+		p:cookieName="langCookie"
+		p:cookiePath="/"
+		p:cookieMaxAge="#{60*60*24*2}"
+	/>
+	
+	<mvc:interceptors>
+		<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor"
+			p:paramName="lang"
+		/>	
+	</mvc:interceptors>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource"
+		p:basename="kr.or.ddit.msgs.message"
+	/>
+	
+</beans>

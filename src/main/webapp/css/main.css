@@ -1,0 +1,34 @@
+@charset "UTF-8";
+
+#top {
+	width: 100%;
+	height: 70px;
+	background-color: gray;
+}
+
+#top li {
+	float: left;
+	padding: 10px 20px 10px 20px;
+	list-style: none;
+}
+
+#left {
+	width: 20%;
+	height: 500px;
+	background-color: orange;
+	float: left;
+}
+
+#content {
+	width: 79%;
+	height: 500px;
+	float: right;
+	overflow: auto;
+}
+
+#footer {
+	width: 100%;
+	height: 70px;
+	background-color: yellow;
+	float: left;
+}

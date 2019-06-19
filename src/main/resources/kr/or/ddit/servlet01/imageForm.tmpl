@@ -1,0 +1,47 @@
+<html>
+<script src="/webStudy01/js/jquery-3.3.1.min.js"></script>
+<script type="text/javascript">
+	$(function(){
+		var pattern = '<img src="image.do?selImg=%I" />';
+		var imageArea = $("#imageArea");
+		$("[name='selImg']").on("change", function(event){
+			// event.target
+			var selImg = $(this).val();
+			var imgTag = pattern.replace("%I", selImg);
+			imageArea.html(imgTag);
+		});
+		
+		$("#imgForm").on("submit", function(event){
+			event.preventDefault();
+			var selImg = $("[name='selImg']").val();
+			var imgTag = pattern.replace("%I", selImg);
+			imageArea.html(imgTag);
+			return false;
+		});
+	});
+</script>
+<body>
+<form id="imgForm" action="image.do" method="post">
+	<select name="selImg">
+		@data@
+	</select>
+	<input type="submit" value="전송" />
+</form>
+<div id="imageArea">
+
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

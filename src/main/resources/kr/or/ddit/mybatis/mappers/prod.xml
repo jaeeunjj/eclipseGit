@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.prod.dao.IProdDAO">
+	<sql id="searchFrag">
+		<where>
+			<if test="searchData!=null">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchData.prod_lgu)">
+					AND	PROD_LGU = #{searchData.prod_lgu}
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchData.prod_buyer)">
+					AND	PROD_BUYER = #{searchData.prod_buyer}
+				</if>
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchData.prod_name)">
+					AND PROD_NAME LIKE '%'||#{searchData.prod_name}||'%'
+				</if>
+			</if>
+		</where>
+	</sql>
+	<select id="selectProdCount" resultType="long" parameterType="PagingVO">
+		SELECT COUNT(PROD_ID)
+		FROM PROD
+		<include refid="searchFrag" />
+	</select>
+	
+	<select id="selectProdList"  resultType="ProdVO" parameterType="PagingVO">
+		SELECT A.*
+		FROM (
+			SELECT ROWNUM RNUM, PROD_ID, PROD_NAME, PROD_COST,
+				   PROD_SALE, PROD_MILEAGE,
+			       PROD_LGU, LPROD_NM, 
+			       PROD_BUYER, BUYER_NAME
+			FROM PROD INNER JOIN LPROD ON (PROD_LGU = LPROD_GU)
+	            INNER JOIN BUYER ON (PROD_BUYER = BUYER_ID)
+	        <include refid="searchFrag" />    
+	    )     A 
+	    <![CDATA[
+	    	WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}   
+	    ]]>
+	</select>
+	<resultMap type="ProdVO" id="prodMap" autoMapping="true">
+		<id property="prod_id" column="PROD_ID"/>
+		<association property="buyer" javaType="BuyerVO" autoMapping="true" />
+		<collection property="memberList" ofType="memberVO" autoMapping="true"/>
+<!-- 		<collection property="memberList"  -->
+<!-- 			select="selectMemberByProdId" column="PROD_ID"/> -->
+	</resultMap>
+	<select id="selectProd" resultMap="prodMap" parameterType="string">
+		SELECT
+		    PROD_ID,    PROD_NAME,    PROD_LGU,
+		    PROD_BUYER,    PROD_COST,    PROD_PRICE,
+		    PROD_SALE,    PROD_OUTLINE,    PROD_DETAIL,
+		    PROD_IMG,    PROD_TOTALSTOCK,    PROD_INSDATE,
+		    PROD_PROPERSTOCK,    PROD_SIZE,    PROD_COLOR,
+		    PROD_DELIVERY,    PROD_UNIT,    PROD_QTYIN,
+		    PROD_QTYSALE,    PROD_MILEAGE
+		    , LPROD_NM
+		    , BUYER_ID, BUYER_NAME, BUYER_ADD1, BUYER_COMTEL, BUYER_CHARGER
+		    , MEM_ID, MEM_NAME, MEM_ADD1, MEM_HP, MEM_MILEAGE
+		FROM PROD INNER JOIN LPROD ON (PROD_LGU = LPROD_GU)
+		            INNER JOIN BUYER ON (PROD_BUYER = BUYER_ID)
+		            LEFT OUTER JOIN CART ON (PROD_ID = CART_PROD)
+		            LEFT OUTER JOIN MEMBER ON (CART_MEMBER = MEM_ID)
+		WHERE PROD_ID = #{prod_id}
+	</select>
+<!-- 	#{} : inline parameter , 리터럴의 타입에 맞춰 쿼리 파라미터가 전달됨. -->
+<!-- 	${} : replace text, 동적 쿼리  -->
+	<update id="updateProd" parameterType="ProdVO">
+		UPDATE prod
+			SET
+		    PROD_NAME	    =      #{prod_name,jdbcType=VARCHAR},
+		    PROD_LGU	    =      #{prod_lgu,jdbcType=CHAR},
+		    PROD_BUYER	    =      #{prod_buyer,jdbcType=CHAR},
+		    PROD_COST	    =      #{prod_cost,jdbcType=NUMERIC},
+		    PROD_PRICE	    =      #{prod_price,jdbcType=NUMERIC},
+		    PROD_SALE	    =      #{prod_sale,jdbcType=NUMERIC},
+		    PROD_OUTLINE    =      #{prod_outline,jdbcType=VARCHAR},
+		    PROD_DETAIL	    =      #{prod_detail,jdbcType=VARCHAR},
+		    PROD_TOTALSTOCK	=      #{prod_totalstock,jdbcType=NUMERIC},
+		    PROD_PROPERSTOCK=      #{prod_properstock,jdbcType=NUMERIC},
+		    PROD_SIZE		=      #{prod_size,jdbcType=VARCHAR},
+		    PROD_COLOR		=      #{prod_color,jdbcType=VARCHAR},
+		    PROD_DELIVERY	=      #{prod_delivery,jdbcType=VARCHAR},
+		    PROD_UNIT		=      #{prod_unit,jdbcType=VARCHAR},
+		    PROD_QTYIN		=      #{prod_qtyin,jdbcType=NUMERIC},
+		    PROD_QTYSALE	=      #{prod_qtysale,jdbcType=NUMERIC},
+		    PROD_MILEAGE	=      #{prod_mileage,jdbcType=NUMERIC}
+		    <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(prod_img)">
+		    , PROD_IMG	    =      #{prod_img,jdbcType=VARCHAR}
+		    </if>
+		WHERE   prod_id =#{prod_id,jdbcType=VARCHAR}
+	</update>
+	
+	<insert id="insertProd" parameterType="ProdVO">
+		<selectKey keyProperty="prod_id" resultType="string" order="BEFORE">
+			SELECT #{prod_lgu}||LPAD(NVL(TO_NUMBER(SUBSTR(MAX(PROD_ID), 5)), 0)+1, 6, '0')
+			FROM PROD 
+			WHERE PROD_LGU=#{prod_lgu}
+		</selectKey>
+		
+		INSERT INTO PROD(
+				 PROD_ID,    PROD_NAME,    PROD_LGU,
+			    PROD_BUYER,    PROD_COST,    PROD_PRICE,
+			    PROD_SALE,    PROD_OUTLINE,    PROD_DETAIL,
+			    PROD_IMG,    PROD_TOTALSTOCK,    PROD_INSDATE,
+			    PROD_PROPERSTOCK,    PROD_SIZE,    PROD_COLOR,
+			    PROD_DELIVERY,    PROD_UNIT,    PROD_QTYIN,
+			    PROD_QTYSALE,    PROD_MILEAGE
+			)VALUES ( 
+			 	#{prod_id},    #{prod_name},    #{prod_lgu},
+			    #{prod_buyer},    #{prod_cost},    #{prod_price},
+			    #{prod_sale},    #{prod_outline},    #{prod_detail,jdbcType=CLOB},
+			    #{prod_img},    #{prod_totalstock},    SYSDATE,
+			    #{prod_properstock},    #{prod_size,jdbcType=VARCHAR},    #{prod_color,jdbcType=VARCHAR},
+			    #{prod_delivery,jdbcType=VARCHAR},    #{prod_unit,jdbcType=VARCHAR},    #{prod_qtyin,jdbcType=NUMERIC},
+			    #{prod_qtysale,jdbcType=NUMERIC},    #{prod_mileage,jdbcType=NUMERIC}
+			) 
+	
+	</insert>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<select id="selectProd_bak" resultMap="prodMap" parameterType="string">
+		SELECT
+		    PROD_ID,    PROD_NAME,    PROD_LGU,
+		    PROD_BUYER,    PROD_COST,    PROD_PRICE,
+		    PROD_SALE,    PROD_OUTLINE,    PROD_DETAIL,
+		    PROD_IMG,    PROD_TOTALSTOCK,    PROD_INSDATE,
+		    PROD_PROPERSTOCK,    PROD_SIZE,    PROD_COLOR,
+		    PROD_DELIVERY,    PROD_UNIT,    PROD_QTYIN,
+		    PROD_QTYSALE,    PROD_MILEAGE
+		    , LPROD_NM
+		    , BUYER_ID, BUYER_NAME, BUYER_ADD1, BUYER_COMTEL, BUYER_CHARGER
+		FROM PROD INNER JOIN LPROD ON (PROD_LGU = LPROD_GU)
+		            INNER JOIN BUYER ON (PROD_BUYER = BUYER_ID)
+		WHERE PROD_ID = #{prod_id}
+	</select>
+	<select id="selectMemberByProdId" resultType="memberVO">
+		SELECT MEM_ID, MEM_NAME, MEM_ADD1, MEM_HP, MEM_MILEAGE
+		FROM MEMBER INNER JOIN CART ON (MEM_ID = CART_MEMBER)
+		WHERE CART_PROD = #{prod_id}
+	</select>
+	
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+

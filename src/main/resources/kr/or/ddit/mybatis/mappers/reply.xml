@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.board.dao.IReplyDAO">
+
+<select id ="selectReplyList" resultType="ReplyVO" parameterType="PagingVO">
+	  WITH ORDEREDREPLY AS (
+		SELECT
+		REP_NO, BO_NO, REP_WRITER,
+        REP_PASS, REP_IP, REP_COMMENT,
+        REP_DATE
+		FROM REPLYBOARD
+        WHERE BO_NO = #{searchData.bo_no}
+		ORDER BY ROWID DESC
+		)
+
+		SELECT *
+		FROM(
+		SELECT ROWNUM RNUM, ORDEREDREPLY.*
+		FROM ORDEREDREPLY
+		)
+		  <![CDATA[
+		WHERE RNUM>=#{startRow} AND RNUM<=#{endRow}
+		]]>
+
+</select>
+
+	<select id="selectReplyCount" parameterType="PagingVO" resultType="long">
+		SELECT COUNT(REP_NO)
+		FROM  REPLYBOARD
+	</select>
+
+	<insert id="insertReply" parameterType="ReplyVO">
+	 INSERT INTO REPLYBOARD(
+    	REP_NO, BO_NO, REP_WRITER,
+        REP_PASS, REP_IP, REP_COMMENT,
+        REP_DATE
+    )VALUES(
+    	REPLY_SEQ.NEXTVAL, #{bo_no}, #{rep_writer},
+        #{rep_pass}, #{rep_ip}, #{rep_comment, jdbcType=VARCHAR},
+        SYSDATE
+    )
+	
+	</insert>
+	
+	<delete id="deleteReply">
+		DELETE FROM REPLYBOARD
+		WHERE
+    	REP_NO = #{rep_no} AND REP_PASS = #{rep_pass}
+	</delete>
+
+
+
+</mapper>

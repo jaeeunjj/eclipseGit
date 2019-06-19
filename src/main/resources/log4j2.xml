@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+<!-- 1. log4j2/slf4j 빌드패스에 추가 (log4j-slf4j-impl) -->
+<!-- 2. log4jdbc-remix 빌드패스에 추가 -->
+<!-- 3. classpath 에 log4j2.xml 작성 -->
+<!-- 	1) appender : 로깅 매체(로그를 기록할 대상) -->
+<!-- 	2) layout : 로깅 형식(로그 메시지 기록 패턴) -->
+<!-- 	3) logging event level : debug>info>warn>error>fatal -->
+<!-- 			로거의 설정에 따라 현재 로거에 설정된 이벤트 등급보다 낮은 등급으로 -->
+<!-- 			로그 메시지를 전달하는 경우, 메시지는 무시됨. -->
+<!-- 	4) logger : 로그 메시지 전달자, 로그 메시지의 기록 여부를 결정할때 logger 의 level에 따라 결정됨.			  -->
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{1.} - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+  	<Logger name="kr.or.ddit" level="info" /> 
+  	<Logger name="org.springframework.web" level="info" /> 
+  	<Logger name="jdbc.sqltiming" level="debug"/>
+  	<Logger name="jdbc.resultsettable" level="debug"/>
+    <Root level="error">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>
